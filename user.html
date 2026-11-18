@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Utilisateurs — GSPA</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <script src="js/app.js"></script>
+  <script>
+    const session = setupLayout('user.html', 'Gestion des utilisateurs');
+    if (!session) throw new Error('Non authentifié');
+    if (session.privilege !== 'admin') {
+      showToast('Accès réservé aux administrateurs.', 'error');
+      window.location.href = 'dashboard.html';
+    }
+
+    let editId = null;
+
+    function renderUsers() {
+      const users = getUsers();
+      const rows = users.map(u => `
+        <tr>
+          <td><strong>${u.prenom} ${u.nom}</strong></td>
+          <td>${u.email}</td>
+          <td>${privilegeBadge(u.privilege)}</td>
+          <td>${u.numPermis || '—'}</td>
+          <td>${u.telephone || '—'}</td>
+          <td class="actions-cell">
+            <button class="btn btn-outline btn-sm" onclick="openEdit('${u.id}')">Modifier</button>
+            <button class="btn btn-danger btn-sm" onclick="confirmDelete('${u.id}', '${u.prenom} ${u.nom}')">Supprimer</button>
+          </td>
+        </tr>
+      `).join('') || `<tr><td colspan="6" style="text-align:center;padding:32px" class="text-muted">Aucun utilisateur</td></tr>`;
+
+      document.getElementById('page-content').innerHTML = `
+        <div class="card">
+          <div class="card-header">
+            <h2>Liste des utilisateurs (${users.length})</h2>
+            <button class="btn btn-primary btn-sm" onclick="openAdd()">+ Ajouter un utilisateur</button>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Nom</th>
+                    <th>Email</th>
+                    <th>Rôle</th>
+                    <th>N° permis</th>
+                    <th>Téléphone</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-overlay" id="user-modal">
+          <div class="modal">
+            <div class="modal-header">
+              <h3 id="modal-title">Ajouter un utilisateur</h3>
+              <button class="modal-close" onclick="closeModal('user-modal')">&times;</button>
+            </div>
+            <form id="user-form">
+              <div class="modal-body">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="nom">Nom *</label>
+                    <input type="text" id="nom" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="prenom">Prénom *</label>
+                    <input type="text" id="prenom" required>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="email">Email *</label>
+                  <input type="email" id="email" required>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="privilege">Rôle *</label>
+                    <select id="privilege" required>
+                      <option value="conducteur">Conducteur</option>
+                      <option value="gestionnaire">Gestionnaire</option>
+                      <option value="admin">Administrateur</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="numPermis">N° permis</label>
+                    <input type="text" id="numPermis" placeholder="Obligatoire pour conducteur">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="telephone">Téléphone</label>
+                    <input type="tel" id="telephone">
+                  </div>
+                  <div class="form-group">
+                    <label for="password">Mot de passe <span id="pwd-hint">*</span></label>
+                    <input type="password" id="password" placeholder="Laisser vide pour ne pas changer">
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('user-modal')">Annuler</button>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('user-form').addEventListener('submit', handleSubmit);
+    }
+
+    function openAdd() {
+      editId = null;
+      document.getElementById('modal-title').textContent = 'Ajouter un utilisateur';
+      document.getElementById('user-form').reset();
+      document.getElementById('password').required = true;
+      document.getElementById('pwd-hint').textContent = '*';
+      openModal('user-modal');
+    }
+
+    function openEdit(id) {
+      const u = getUserById(id);
+      if (!u) return;
+      editId = id;
+      document.getElementById('modal-title').textContent = "Modifier l'utilisateur";
+      document.getElementById('nom').value = u.nom;
+      document.getElementById('prenom').value = u.prenom;
+      document.getElementById('email').value = u.email;
+      document.getElementById('privilege').value = u.privilege;
+      document.getElementById('numPermis').value = u.numPermis || '';
+      document.getElementById('telephone').value = u.telephone || '';
+      document.getElementById('password').value = '';
+      document.getElementById('password').required = false;
+      document.getElementById('pwd-hint').textContent = '';
+      openModal('user-modal');
+    }
+
+    function handleSubmit(e) {
+      e.preventDefault();
+      const data = {
+        nom: document.getElementById('nom').value.trim(),
+        prenom: document.getElementById('prenom').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        privilege: document.getElementById('privilege').value,
+        numPermis: document.getElementById('numPermis').value.trim(),
+        telephone: document.getElementById('telephone').value.trim()
+      };
+      const pwd = document.getElementById('password').value;
+      if (pwd) data.password = pwd;
+
+      if (data.privilege === 'conducteur' && !data.numPermis) {
+        showToast('Le numéro de permis est obligatoire pour un conducteur.', 'error');
+        return;
+      }
+
+      try {
+        if (editId) {
+          updateUser(editId, data);
+          showToast('Utilisateur modifié avec succès.');
+        } else {
+          if (!pwd) {
+            showToast('Le mot de passe est obligatoire.', 'error');
+            return;
+          }
+          data.password = pwd;
+          addUser(data);
+          showToast('Utilisateur ajouté avec succès.');
+        }
+        closeModal('user-modal');
+        renderUsers();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    function confirmDelete(id, name) {
+      if (!confirm("Supprimer l'utilisateur « " + name + " » ? Cette action est irréversible.")) return;
+      try {
+        deleteUser(id);
+        showToast('Utilisateur supprimé.');
+        renderUsers();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    renderUsers();
+  </script>
+</body>
+</html>
