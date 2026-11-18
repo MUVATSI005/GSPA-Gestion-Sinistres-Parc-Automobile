@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="420" viewBox="0 0 920 420">
+  <rect width="920" height="420" fill="#f8fafc"/>
+  <text x="460" y="28" text-anchor="middle" font-family="Arial" font-size="18" font-weight="bold" fill="#0f172a">Diagramme de classes — GSPA</text>
+  <rect x="40" y="50" width="200" height="28" fill="#1e40af"/>
+  <text x="140" y="69" text-anchor="middle" font-family="Arial" font-size="13" font-weight="bold" fill="#fff">Utilisateur</text>
+  <rect x="40" y="78" width="200" height="160" fill="#fff" stroke="#1e3a8a"/>
+  <text x="50" y="98" font-family="Arial" font-size="11" fill="#334155">+ id: string</text>
+  <text x="50" y="114" font-family="Arial" font-size="11" fill="#334155">+ nom, prenom: string</text>
+  <text x="50" y="130" font-family="Arial" font-size="11" fill="#334155">+ email: string</text>
+  <text x="50" y="146" font-family="Arial" font-size="11" fill="#334155">+ password: string</text>
+  <text x="50" y="162" font-family="Arial" font-size="11" fill="#334155">+ privilege: enum</text>
+  <text x="50" y="178" font-family="Arial" font-size="11" fill="#334155">+ numPermis: string</text>
+  <line x1="44" y1="188" x2="236" y2="188" stroke="#cbd5e1"/>
+  <text x="50" y="208" font-family="Arial" font-size="11" fill="#1e40af">+ seConnecter()</text>
+  <text x="50" y="224" font-family="Arial" font-size="11" fill="#1e40af">+ seDeconnecter()</text>
+  <rect x="320" y="50" width="200" height="28" fill="#1e40af"/>
+  <text x="420" y="69" text-anchor="middle" font-family="Arial" font-size="13" font-weight="bold" fill="#fff">Vehicule</text>
+  <rect x="320" y="78" width="200" height="160" fill="#fff" stroke="#1e3a8a"/>
+  <text x="330" y="98" font-family="Arial" font-size="11" fill="#334155">+ id: string</text>
+  <text x="330" y="114" font-family="Arial" font-size="11" fill="#334155">+ immatriculation: string</text>
+  <text x="330" y="130" font-family="Arial" font-size="11" fill="#334155">+ marque, modele: string</text>
+  <text x="330" y="146" font-family="Arial" font-size="11" fill="#334155">+ annee: int</text>
+  <text x="330" y="162" font-family="Arial" font-size="11" fill="#334155">+ statut: enum</text>
+  <text x="330" y="178" font-family="Arial" font-size="11" fill="#334155">+ conducteurId: string</text>
+  <line x1="324" y1="188" x2="516" y2="188" stroke="#cbd5e1"/>
+  <text x="330" y="208" font-family="Arial" font-size="11" fill="#1e40af">+ assignerConducteur()</text>
+  <rect x="600" y="50" width="220" height="28" fill="#1e40af"/>
+  <text x="710" y="69" text-anchor="middle" font-family="Arial" font-size="13" font-weight="bold" fill="#fff">Sinistre</text>
+  <rect x="600" y="78" width="220" height="180" fill="#fff" stroke="#1e3a8a"/>
+  <text x="610" y="98" font-family="Arial" font-size="11" fill="#334155">+ id, numero: string</text>
+  <text x="610" y="114" font-family="Arial" font-size="11" fill="#334155">+ dateSinistre: date</text>
+  <text x="610" y="130" font-family="Arial" font-size="11" fill="#334155">+ type, description: string</text>
+  <text x="610" y="146" font-family="Arial" font-size="11" fill="#334155">+ gravite, statut: enum</text>
+  <text x="610" y="162" font-family="Arial" font-size="11" fill="#334155">+ coutEstime: float</text>
+  <text x="610" y="178" font-family="Arial" font-size="11" fill="#334155">+ vehiculeId, conducteurId</text>
+  <line x1="604" y1="188" x2="816" y2="188" stroke="#cbd5e1"/>
+  <text x="610" y="208" font-family="Arial" font-size="11" fill="#1e40af">+ declarer()</text>
+  <text x="610" y="224" font-family="Arial" font-size="11" fill="#1e40af">+ modifierStatut()</text>
+  <line x1="240" y1="140" x2="320" y2="140" stroke="#475569" stroke-width="2"/>
+  <text x="260" y="132" font-family="Arial" font-size="10" fill="#64748b">1</text>
+  <text x="295" y="132" font-family="Arial" font-size="10" fill="#64748b">0..*</text>
+  <text x="255" y="158" font-family="Arial" font-size="10" fill="#64748b">conduit</text>
+  <line x1="520" y1="140" x2="600" y2="140" stroke="#475569" stroke-width="2"/>
+  <text x="540" y="132" font-family="Arial" font-size="10" fill="#64748b">1</text>
+  <text x="575" y="132" font-family="Arial" font-size="10" fill="#64748b">*</text>
+  <rect x="40" y="280" width="200" height="28" fill="#059669"/>
+  <text x="140" y="299" text-anchor="middle" font-family="Arial" font-size="13" font-weight="bold" fill="#fff">Session</text>
+  <rect x="40" y="308" width="200" height="90" fill="#fff" stroke="#047857"/>
+  <text x="50" y="328" font-family="Arial" font-size="11" fill="#334155">+ id, nom, prenom</text>
+  <text x="50" y="344" font-family="Arial" font-size="11" fill="#334155">+ email, privilege</text>
+  <line x1="44" y1="354" x2="236" y2="354" stroke="#cbd5e1"/>
+  <text x="50" y="374" font-family="Arial" font-size="11" fill="#059669">+ estAuthentifie()</text>
+  <rect x="320" y="280" width="220" height="28" fill="#059669"/>
+  <text x="430" y="299" text-anchor="middle" font-family="Arial" font-size="13" font-weight="bold" fill="#fff">LocalStorage</text>
+  <rect x="320" y="308" width="220" height="90" fill="#fff" stroke="#047857"/>
+  <text x="330" y="328" font-family="Arial" font-size="11" fill="#334155">- users, vehicles, claims</text>
+  <text x="330" y="344" font-family="Arial" font-size="11" fill="#334155">- session</text>
+  <line x1="324" y1="354" x2="536" y2="354" stroke="#cbd5e1"/>
+  <text x="330" y="374" font-family="Arial" font-size="11" fill="#059669">+ getData() / setData()</text>
+</svg>
