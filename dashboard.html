@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tableau de bord — GSPA</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <script src="js/app.js"></script>
+  <script>
+    const session = setupLayout('dashboard.html', 'Tableau de bord');
+    if (!session) throw new Error('Non authentifié');
+
+    const users = getUsers();
+    const vehicles = getVehicles();
+    const claims = getClaims();
+
+    // Filtrer selon le rôle
+    let myClaims = claims;
+    let myVehicles = vehicles;
+    if (session.privilege === 'conducteur') {
+      myClaims = claims.filter(c => c.conducteurId === session.id);
+      myVehicles = vehicles.filter(v => v.conducteurId === session.id);
+    }
+
+    const stats = {
+      users: users.length,
+      vehicles: vehicles.length,
+      claimsOpen: claims.filter(c => c.statut === 'declare' || c.statut === 'en_cours').length,
+      claimsTotal: claims.length,
+      myClaims: myClaims.length,
+      myOpen: myClaims.filter(c => c.statut === 'declare' || c.statut === 'en_cours').length
+    };
+
+    // Derniers sinistres
+    const recentClaims = [...myClaims]
+      .sort((a, b) => (b.dateSinistre || '').localeCompare(a.dateSinistre || ''))
+      .slice(0, 5);
+
+    let statsHtml = '';
+    if (session.privilege === 'admin' || session.privilege === 'gestionnaire') {
+      statsHtml = `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon blue">👥</div>
+            <div>
+              <div class="value">${stats.users}</div>
+              <div class="label">Utilisateurs</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">🚗</div>
+            <div>
+              <div class="value">${stats.vehicles}</div>
+              <div class="label">Véhicules</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange">📋</div>
+            <div>
+              <div class="value">${stats.claimsOpen}</div>
+              <div class="label">Sinistres ouverts</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple">📁</div>
+            <div>
+              <div class="value">${stats.claimsTotal}</div>
+              <div class="label">Total sinistres</div>
+            </div>
+          </div>
+        </div>
+      `;
+    } else {
+      statsHtml = `
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon green">🚗</div>
+            <div>
+              <div class="value">${myVehicles.length}</div>
+              <div class="label">Mes véhicules</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon orange">📋</div>
+            <div>
+              <div class="value">${stats.myOpen}</div>
+              <div class="label">Sinistres ouverts</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple">📁</div>
+            <div>
+              <div class="value">${stats.myClaims}</div>
+              <div class="label">Total mes sinistres</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    const rows = recentClaims.map(c => `
+      <tr>
+        <td><strong>${c.numero}</strong></td>
+        <td>${formatDate(c.dateSinistre)}</td>
+        <td>${getVehicleLabel(c.vehiculeId)}</td>
+        <td>${c.type}</td>
+        <td>${statutBadge(c.statut)}</td>
+      </tr>
+    `).join('') || `<tr><td colspan="5" class="text-muted" style="text-align:center;padding:24px">Aucun sinistre récent</td></tr>`;
+
+    document.getElementById('page-content').innerHTML = `
+      <p class="text-muted" style="margin-bottom:20px">
+        Bienvenue, <strong>${session.prenom} ${session.nom}</strong> —
+        ${session.privilege === 'admin' ? 'Administrateur' : session.privilege === 'gestionnaire' ? 'Gestionnaire' : 'Conducteur'}
+      </p>
+      ${statsHtml}
+
+      <div class="card">
+        <div class="card-header">
+          <h2>Derniers sinistres</h2>
+          <a href="sinistre.html" class="btn btn-outline btn-sm">Voir tout</a>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>N°</th>
+                  <th>Date</th>
+                  <th>Véhicule</th>
+                  <th>Type</th>
+                  <th>Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+  </script>
+</body>
+</html>
