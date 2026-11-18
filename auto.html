@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parc automobile — GSPA</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <script src="js/app.js"></script>
+  <script>
+    const session = setupLayout('auto.html', 'Parc automobile');
+    if (!session) throw new Error('Non authentifié');
+    if (!['admin', 'gestionnaire'].includes(session.privilege)) {
+      showToast('Accès non autorisé.', 'error');
+      window.location.href = 'dashboard.html';
+    }
+
+    let editId = null;
+
+    function renderVehicles() {
+      const vehicles = getVehicles();
+      const drivers = getUsers().filter(u => u.privilege === 'conducteur');
+
+      const rows = vehicles.map(v => `
+        <tr>
+          <td><strong>${v.immatriculation}</strong></td>
+          <td>${v.marque} ${v.modele}</td>
+          <td>${v.annee}</td>
+          <td>${v.type}</td>
+          <td>${v.kilometrage ? v.kilometrage.toLocaleString('fr-FR') + ' km' : '—'}</td>
+          <td>${statutBadge(v.statut)}</td>
+          <td>${getConducteurName(v.conducteurId)}</td>
+          <td class="actions-cell">
+            <button class="btn btn-outline btn-sm" onclick="openEdit('${v.id}')">Modifier</button>
+            <button class="btn btn-danger btn-sm" onclick="confirmDelete('${v.id}', '${v.immatriculation}')">Supprimer</button>
+          </td>
+        </tr>
+      `).join('') || `<tr><td colspan="8" style="text-align:center;padding:32px" class="text-muted">Aucun véhicule</td></tr>`;
+
+      const driverOptions = drivers.map(d =>
+        `<option value="${d.id}">${d.prenom} ${d.nom}</option>`
+      ).join('');
+
+      document.getElementById('page-content').innerHTML = `
+        <div class="card">
+          <div class="card-header">
+            <h2>Parc automobile (${vehicles.length})</h2>
+            <button class="btn btn-primary btn-sm" onclick="openAdd()">+ Ajouter un véhicule</button>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Immatriculation</th>
+                    <th>Véhicule</th>
+                    <th>Année</th>
+                    <th>Type</th>
+                    <th>Kilométrage</th>
+                    <th>Statut</th>
+                    <th>Conducteur</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-overlay" id="vehicle-modal">
+          <div class="modal">
+            <div class="modal-header">
+              <h3 id="modal-title">Ajouter un véhicule</h3>
+              <button class="modal-close" onclick="closeModal('vehicle-modal')">&times;</button>
+            </div>
+            <form id="vehicle-form">
+              <div class="modal-body">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="immatriculation">Immatriculation *</label>
+                    <input type="text" id="immatriculation" required placeholder="AB-123-CD">
+                  </div>
+                  <div class="form-group">
+                    <label for="annee">Année *</label>
+                    <input type="number" id="annee" required min="1990" max="2030">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="marque">Marque *</label>
+                    <input type="text" id="marque" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="modele">Modèle *</label>
+                    <input type="text" id="modele" required>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="type">Type *</label>
+                    <select id="type" required>
+                      <option value="Citadine">Citadine</option>
+                      <option value="Berline">Berline</option>
+                      <option value="SUV">SUV</option>
+                      <option value="Utilitaire">Utilitaire</option>
+                      <option value="Fourgon">Fourgon</option>
+                      <option value="Autre">Autre</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="couleur">Couleur</label>
+                    <input type="text" id="couleur">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="kilometrage">Kilométrage</label>
+                    <input type="number" id="kilometrage" min="0">
+                  </div>
+                  <div class="form-group">
+                    <label for="statut">Statut *</label>
+                    <select id="statut" required>
+                      <option value="disponible">Disponible</option>
+                      <option value="en_service">En service</option>
+                      <option value="en_reparation">En réparation</option>
+                      <option value="hors_service">Hors service</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="conducteurId">Conducteur assigné</label>
+                  <select id="conducteurId">
+                    <option value="">— Aucun —</option>
+                    ${driverOptions}
+                  </select>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('vehicle-modal')">Annuler</button>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('vehicle-form').addEventListener('submit', handleSubmit);
+    }
+
+    function openAdd() {
+      editId = null;
+      document.getElementById('modal-title').textContent = 'Ajouter un véhicule';
+      document.getElementById('vehicle-form').reset();
+      document.getElementById('annee').value = new Date().getFullYear();
+      openModal('vehicle-modal');
+    }
+
+    function openEdit(id) {
+      const v = getVehicleById(id);
+      if (!v) return;
+      editId = id;
+      document.getElementById('modal-title').textContent = 'Modifier le véhicule';
+      document.getElementById('immatriculation').value = v.immatriculation;
+      document.getElementById('marque').value = v.marque;
+      document.getElementById('modele').value = v.modele;
+      document.getElementById('annee').value = v.annee;
+      document.getElementById('type').value = v.type;
+      document.getElementById('couleur').value = v.couleur || '';
+      document.getElementById('kilometrage').value = v.kilometrage || '';
+      document.getElementById('statut').value = v.statut;
+      document.getElementById('conducteurId').value = v.conducteurId || '';
+      openModal('vehicle-modal');
+    }
+
+    function handleSubmit(e) {
+      e.preventDefault();
+      const data = {
+        immatriculation: document.getElementById('immatriculation').value.trim().toUpperCase(),
+        marque: document.getElementById('marque').value.trim(),
+        modele: document.getElementById('modele').value.trim(),
+        annee: parseInt(document.getElementById('annee').value, 10),
+        type: document.getElementById('type').value,
+        couleur: document.getElementById('couleur').value.trim(),
+        kilometrage: parseInt(document.getElementById('kilometrage').value, 10) || 0,
+        statut: document.getElementById('statut').value,
+        conducteurId: document.getElementById('conducteurId').value || null
+      };
+
+      try {
+        if (editId) {
+          updateVehicle(editId, data);
+          showToast('Véhicule modifié avec succès.');
+        } else {
+          addVehicle(data);
+          showToast('Véhicule ajouté avec succès.');
+        }
+        closeModal('vehicle-modal');
+        renderVehicles();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    function confirmDelete(id, immat) {
+      if (!confirm("Supprimer le véhicule « " + immat + " » ?")) return;
+      try {
+        deleteVehicle(id);
+        showToast('Véhicule supprimé.');
+        renderVehicles();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    renderVehicles();
+  </script>
+</body>
+</html>
